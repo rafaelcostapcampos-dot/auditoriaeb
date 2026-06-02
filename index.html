@@ -392,6 +392,7 @@ select:focus{border-color:var(--navy-700);}
 }
 .bilat-box-label{font-size:.7rem;color:#92400e;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;}
 .bilat-box-value{font-family:"Syne",sans-serif;font-size:1.05rem;font-weight:800;color:#78350f;letter-spacing:-0.01em;}
+.bilat-box-detail{font-size:.7rem;color:#92400e;margin-top:3px;font-family:"JetBrains Mono",monospace;opacity:0.85;}
 .bilat-formula{margin-top:8px;font-size:.78rem;color:#78350f;font-style:italic;line-height:1.55;}
 
 /* ============ PI CARDS ============ */
@@ -870,9 +871,7 @@ function render(res,q,gr){
     var as=brl(p.amb), a7=brl(p.amb70), hs=brl(p.hosp), h7=brl(p.hosp70);
     
     if(as) chips+='<span class="val-chip val-chip-amb">🟢 Amb: '+as+'</span>';
-    if(a7) chips+='<span class="val-chip val-chip-amb70">Amb 70%: '+a7+'</span>';
     if(hs) chips+='<span class="val-chip '+(isPkg?'val-chip-pkg':'val-chip-hosp')+'">'+(isPkg?'📦 Pacote: ':'🔵 Hosp: ')+hs+'</span>';
-    if(h7) chips+='<span class="val-chip val-chip-hosp70">Hosp 70%: '+h7+'</span>';
     
     // PI tag - shows which Plano de Internação to use
     if(p.pi){
@@ -886,8 +885,8 @@ function render(res,q,gr){
       chips+='<span class="pi-tag pi-tag-'+p.pi+'" title="Plano de Internação: '+piTitles[p.pi]+'. Clique na aba PI para mais detalhes.">'+p.pi+'</span>';
     }
     
-    // Action chips - Bilateral applies regardless of 70% table value (different concept)
-    var hasBilat = p.bilateral && !isPkg && (p.amb!=null || p.hosp!=null);
+    // Action chips - Bilateral only when table has 70% values
+    var hasBilat = p.bilateral && !isPkg && (p.amb70!=null || p.hosp70!=null);
     if(hasBilat) chips+='<span class="action-chip action-bilat" id="bt'+i+'" onclick="tgEx('+i+',\'bilat\',event)">⚖️ Ver Bilateral ▼</span>';
     if(p.temDUT) chips+='<span class="action-chip action-dut" id="dt'+i+'" onclick="tgEx('+i+',\'dut\',event)">📋 Ver DUT ▼</span>';
     if(p.incluso) chips+='<span class="action-chip action-incl" id="it'+i+'" onclick="tgEx('+i+',\'incl\',event)">📦 O que inclui ▼</span>';
@@ -896,21 +895,21 @@ function render(res,q,gr){
     var expands='';
     if(hasBilat){
       var bilatHTML='<div class="expand-section bilat" id="ex'+i+'_bilat"><div class="expand-title">⚖️ Cálculo Bilateral</div><div class="expand-content">';
-      bilatHTML+='Quando o exame é solicitado para os dois lados (ex: ambos os joelhos), aplica-se a regra do CBHPM:<br><b>1º procedimento: 100%</b> · <b>2º procedimento: 70%</b>';
+      bilatHTML+='Quando o exame é solicitado para os dois lados, aplica-se a regra do CBHPM: <b>1º procedimento: valor 100%</b> · <b>2º procedimento: valor 70%</b> (conforme tabela)';
       bilatHTML+='<div class="bilat-grid">';
-      if(p.amb!=null){
-        var totalAmb = p.amb * 1.70;
+      if(p.amb!=null && p.amb70!=null){
+        var totalAmb = p.amb + p.amb70;
         var unitAmb = totalAmb / 2;
-        bilatHTML+='<div class="bilat-box"><div class="bilat-box-label">Total Ambulatorial</div><div class="bilat-box-value">'+brl(totalAmb)+'</div></div>';
+        bilatHTML+='<div class="bilat-box"><div class="bilat-box-label">Total Ambulatorial</div><div class="bilat-box-value">'+brl(totalAmb)+'</div><div class="bilat-box-detail">'+brl(p.amb)+' + '+brl(p.amb70)+'</div></div>';
         bilatHTML+='<div class="bilat-box"><div class="bilat-box-label">Por Unidade (Amb)</div><div class="bilat-box-value">'+brl(unitAmb)+'</div></div>';
       }
-      if(p.hosp!=null){
-        var totalHosp = p.hosp * 1.70;
+      if(p.hosp!=null && p.hosp70!=null){
+        var totalHosp = p.hosp + p.hosp70;
         var unitHosp = totalHosp / 2;
-        bilatHTML+='<div class="bilat-box"><div class="bilat-box-label">Total Hospitalar</div><div class="bilat-box-value">'+brl(totalHosp)+'</div></div>';
+        bilatHTML+='<div class="bilat-box"><div class="bilat-box-label">Total Hospitalar</div><div class="bilat-box-value">'+brl(totalHosp)+'</div><div class="bilat-box-detail">'+brl(p.hosp)+' + '+brl(p.hosp70)+'</div></div>';
         bilatHTML+='<div class="bilat-box"><div class="bilat-box-label">Por Unidade (Hosp)</div><div class="bilat-box-value">'+brl(unitHosp)+'</div></div>';
       }
-      bilatHTML+='</div><div class="bilat-formula">Fórmula: Total = (Valor × 100%) + (Valor × 70%) · Unidade = Total ÷ 2</div>';
+      bilatHTML+='</div><div class="bilat-formula">Fórmula: Total = Valor 100% + Valor 70% (tabela) · Unidade = Total ÷ 2</div>';
       bilatHTML+='</div></div>';
       expands+=bilatHTML;
     }
