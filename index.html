@@ -585,20 +585,28 @@ footer{
 
 /* ============ COPY BUTTONS ============ */
 .copy-btn{
-  background:none;border:none;cursor:pointer;
-  padding:2px 6px;border-radius:5px;font-size:.7rem;
+  background:rgba(255,255,255,0.6);border:1px solid rgba(0,0,0,0.08);cursor:pointer;
+  padding:2px 6px;border-radius:5px;font-size:.72rem;
   color:var(--text-muted);transition:all .15s;
-  margin-left:4px;opacity:0;
+  margin-left:6px;opacity:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:22px;height:20px;line-height:1;
 }
-.code-pill:hover + .copy-btn,
-.val-chip:hover .copy-btn,
-.code-pill .copy-btn{opacity:1;}
-.val-chip{position:relative;cursor:default;}
-.val-chip:hover{filter:brightness(0.96);}
-.val-chip .copy-btn{opacity:0.6;padding:0;margin-left:6px;font-size:.7rem;}
-.val-chip:hover .copy-btn{opacity:1;}
-.code-pill{position:relative;cursor:pointer;}
-.code-pill:hover::after{content:"📋";position:absolute;top:-2px;right:-2px;font-size:.6rem;background:#fff;border-radius:50%;padding:2px;}
+.copy-btn:hover{
+  background:#fff;border-color:var(--navy-700);color:var(--navy-700);
+  transform:scale(1.08);
+}
+.val-chip{position:relative;display:inline-flex;align-items:center;gap:2px;}
+.code-pill{position:relative;cursor:pointer;transition:transform .12s;}
+.code-pill:hover{transform:scale(1.04);}
+.code-pill::after{
+  content:"📋";position:absolute;top:-4px;right:-4px;
+  font-size:.55rem;background:#fff;border-radius:50%;
+  width:14px;height:14px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 3px rgba(0,0,0,0.20);
+  opacity:0;transition:opacity .15s;
+}
+.code-pill:hover::after{opacity:1;}
 
 /* Toast */
 .toast{
@@ -1244,25 +1252,21 @@ function showToast(msg){
   setTimeout(function(){t.classList.remove('show');},2200);
 }
 
-// ============ IMPRIMIR DUT ============
-function printDUT(code,event){
+// ============ COPIAR DUT ============
+function copyDUT(code,event){
   if(event) event.stopPropagation();
   var p=D.find(function(d){return d.codigo===code;});
   if(!p||!p.dut) return;
-  // Create temporary print area
-  var existing=document.getElementById('printArea');
-  if(existing) existing.remove();
-  var area=document.createElement('div');
-  area.id='printArea';
-  area.className='print-area';
-  area.innerHTML='<div class="print-header"><h1>📋 Diretriz de Utilização (DUT) — ANS</h1><p>Consulta CBHPM · FUSEx · PMGuBH · 4ª Região Militar</p></div>'+
-    '<h2 style="font-family:Syne,sans-serif;color:#0d4f8c;font-size:16px;margin-bottom:6px;">'+p.nome+'</h2>'+
-    '<p style="font-size:11px;color:#666;margin-bottom:14px;font-family:JetBrains Mono,monospace;">Código CBHPM: <b>'+p.codigo+'</b> · '+p.grupo+'</p>'+
-    '<div style="font-size:12px;line-height:1.7;color:#222;">'+p.dut+'</div>'+
-    '<p style="margin-top:24px;font-size:9px;color:#999;border-top:1px solid #ccc;padding-top:8px;">Impresso em '+new Date().toLocaleString('pt-BR')+' · Fonte: Anexo II DUT 2021 (RN 465/RN 606/RN 607)</p>';
-  document.body.appendChild(area);
-  window.print();
-  setTimeout(function(){area.remove();},500);
+  // Strip HTML tags from DUT for clean text
+  var temp=document.createElement('div');
+  temp.innerHTML=p.dut;
+  var dutText=temp.textContent||temp.innerText||'';
+  var fullText='📋 DIRETRIZ DE UTILIZAÇÃO (DUT) — ANS\n\n'+
+    p.nome+'\n'+
+    'Código CBHPM: '+p.codigo+' · '+p.grupo+'\n\n'+
+    dutText+'\n\n'+
+    'Fonte: Anexo II DUT 2021 (RN 465/RN 606/RN 607)';
+  copyText(fullText,'DUT completa',event);
 }
 
 // ============ STATS TRACKING ============
@@ -1510,7 +1514,7 @@ function render(res,q,gr){
       expands+=bilatHTML;
     }
     if(p.temDUT){
-      expands+='<div class="expand-section dut" id="ex'+i+'_dut"><div class="expand-title">📋 Diretriz de Utilização (DUT) – ANS</div><div class="expand-content">'+p.dut+'<br><button class="print-dut-btn" onclick="printDUT(\''+p.codigo+'\',event)">🖨️ Imprimir / Exportar DUT</button></div></div>';
+      expands+='<div class="expand-section dut" id="ex'+i+'_dut"><div class="expand-title">📋 Diretriz de Utilização (DUT) – ANS</div><div class="expand-content">'+p.dut+'<br><button class="print-dut-btn" onclick="copyDUT(\''+p.codigo+'\',event)">📋 Copiar DUT completa</button></div></div>';
     }
     if(p.incluso){
       expands+='<div class="expand-section incl" id="ex'+i+'_incl"><div class="expand-title">📦 O que está incluído no pacote</div><div class="expand-content">'+p.incluso+'</div></div>';
