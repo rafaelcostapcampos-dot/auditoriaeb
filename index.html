@@ -1819,6 +1819,57 @@ function calcEnviarConform() {
   var d = _calcProc || {codigo:'', nome:'Procedimento manual', pi:'IELE'};
   enviarParaConform(d, res._valCir || 0, (res._valCir||0)*2, res._valAnest || 0);
 }
+
+// ============ ABA EM DESENVOLVIMENTO ============
+function checkDevPwd() {
+  var pwd = document.getElementById('devPwd');
+  if (!pwd) return;
+  if (pwd.value === '050799') {
+    document.getElementById('dev-lock').style.display = 'none';
+    document.getElementById('dev-content').style.display = 'block';
+    setDevTab('conform', document.querySelector('#dev-content .chip'));
+  } else {
+    var err = document.getElementById('devPwdErr');
+    if (err) { err.style.display = 'block'; }
+    pwd.value = '';
+    pwd.focus();
+  }
+}
+
+function initDev() {
+  // Called when the dev tab is opened
+  // If already unlocked, keep showing content
+}
+
+function setDevTab(id, btn) {
+  // Hide all dev sub-tabs
+  var tabs = ['devtab-conform','devtab-cbhpmcalc','devtab-portebus'];
+  tabs.forEach(function(t) {
+    var el = document.getElementById(t);
+    if (el) el.style.display = 'none';
+  });
+  // Remove active from all chips in dev
+  var devContent = document.getElementById('dev-content');
+  if (devContent) {
+    devContent.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+  }
+  // Show selected tab
+  var target = document.getElementById('devtab-' + id);
+  if (target) target.style.display = 'block';
+  if (btn) {
+    btn.classList.add('active');
+    btn.style.background = 'var(--gold)';
+    btn.style.color = 'var(--navy-900)';
+    btn.style.borderColor = 'var(--gold)';
+  }
+  // Init actions for each tab
+  if (id === 'cbhpmcalc') calcEdital();
+  if (id === 'portebus') {
+    var pb = document.getElementById('pb-input');
+    if (pb && pb.value) doPorteSearch();
+  }
+}
+
 </script>
 </body>
 </html>
