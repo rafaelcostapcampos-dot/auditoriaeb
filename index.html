@@ -203,90 +203,69 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .dev-form-field input,.dev-form-field textarea,.dev-form-field select{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.82rem;box-sizing:border-box;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;}
 .dev-form-field input:focus,.dev-form-field textarea:focus{border-color:var(--navy-700);outline:none;}
 @media print{
-  /* Hide everything except the conform form */
-  .header,.tabs-outer,.search-section,.proc-actions,.fav-hist-bar,
-  .footer,.no-print,.results-wrap > *:not(#conform-print-area),
-  #dev-lock,.chip,.btn-sm,button{display:none!important;}
+  /* Visibility trick: hide everything, then show only the CONFORM form */
+  @page{size:A4 portrait;margin:8mm 10mm;}
   
-  /* Show only the conform form */
-  body,html{margin:0;padding:0;background:#fff!important;}
-  .tab-content{display:block!important;}
-  #tab-dev,#dev-content,#devtab-conform{display:block!important;padding:0!important;margin:0!important;}
-  .results-wrap{padding:0!important;}
+  body *{visibility:hidden!important;}
   
-  @page{
-    size:A4 portrait;
-    margin:6mm 8mm;
-  }
+  #conform-form,
+  #conform-form *{visibility:visible!important;}
   
-  /* Scale conform form to fit 1 page */
+  /* Hide items section - use display:none which overrides visibility */
+  #conform-form .no-print{display:none!important;visibility:hidden!important;}
+  .no-print{display:none!important;}
+  #conf-items-list,#conf-items-list *{display:none!important;visibility:hidden!important;}
+  #conf-totais-wrap,#conf-totais-wrap *{display:none!important;visibility:hidden!important;}
+  #conf-total-badge{display:none!important;}
+  
+  /* Position the form at top of page */
   #conform-form{
+    position:fixed!important;
+    left:0!important;top:0!important;
+    width:100%!important;
+    font-size:.68rem!important;
     border:none!important;
     border-radius:0!important;
-    padding:4px!important;
-    font-size:.68rem!important;
-    transform-origin:top left;
-    page-break-inside:avoid;
-    max-width:100%!important;
+    padding:4px 6px!important;
     box-shadow:none!important;
+    background:#fff!important;
   }
   
-  /* Compact table rows */
-  #conform-form td, #conform-form th{
-    padding:2px 5px!important;
-    font-size:.68rem!important;
-  }
+  /* Compact table */
+  #conform-form table{width:100%!important;border-collapse:collapse!important;}
+  #conform-form td,#conform-form th{padding:2px 5px!important;font-size:.68rem!important;}
   
-  /* Compact input values in table */
+  /* Input fields as simple underlines */
   #conform-form input[type=text]{
-    border:none!important;
-    border-bottom:1px solid #000!important;
-    border-radius:0!important;
-    padding:1px 3px!important;
-    font-size:.68rem!important;
-    width:90px!important;
-    background:transparent!important;
+    border:none!important;border-bottom:1px solid #333!important;
+    border-radius:0!important;padding:0 2px!important;
+    font-size:.68rem!important;background:transparent!important;
+    width:auto!important;min-width:60px!important;
+    -webkit-appearance:none!important;
+  }
+  
+  /* Select as text */
+  #conform-form select{
+    border:none!important;border-bottom:1px solid #333!important;
+    font-size:.68rem!important;background:transparent!important;
+    -webkit-appearance:none!important;
   }
   
   /* Header tight */
-  #conform-form > div:first-child{
-    padding-bottom:3px!important;
-    margin-bottom:4px!important;
+  #conform-form>div:first-child{
+    padding-bottom:3px!important;margin-bottom:4px!important;
   }
   
-  /* Checkboxes and labels compact */
-  #conform-form label{
-    font-size:.68rem!important;
-    margin:0!important;
+  /* Labels compact */
+  #conform-form label{font-size:.68rem!important;gap:2px!important;}
+  
+  /* Total row highlighted */
+  #conform-form tr[style*="font-weight:700"] td{
+    font-size:.76rem!important;font-weight:800!important;
   }
   
-  /* Hide Limpar/Imprimir buttons */
-  #devtab-conform > div:first-child > div:last-child{display:none!important;}
-  
-  /* Patient/guia row compact */
-  #conform-form table{
-    width:100%!important;
-    border-collapse:collapse!important;
-  }
-  
-  /* Signature area compact */
-  .conform-footer-row{
-    margin-top:4px!important;
-  }
-  body{background:#fff;}
-  #conform-form input,#conform-form textarea,#conform-form select{border:none!important;border-bottom:1px solid #999!important;background:transparent!important;}
-}
-/* RESPONSIVE */
-@media(max-width:768px){
-  .header-inner{padding:10px 14px;}
-  .logo-text h1{font-size:.95rem;}
-  .main-wrap{padding:12px;}
-  .search-section{padding:14px 16px;}
-  .results-wrap{padding:12px 14px;}
-  .calc-row{grid-template-columns:1fr;}
-  .proc-values{gap:6px;}
-  .pv{min-width:70px;}
-  .tab{padding:10px 12px;font-size:.78rem;}
+  /* Signature area */
+  .conform-sig-area{margin-top:6px!important;}
 }
 </style>
 </head>
@@ -690,7 +669,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <div style="font-weight:700;font-size:.82rem;color:var(--navy-700);">Itens Adicionados</div>
               <div id="conf-total-badge" style="display:none;background:var(--navy-700);color:#fff;font-size:.76rem;font-weight:700;padding:3px 10px;border-radius:7px;"></div>
             </div>
-            <div id="conf-items-list" style="font-size:.78rem;">
+            <div id="conf-items-list" class="no-print" style="font-size:.78rem;">
               <div style="color:var(--text-muted);text-align:center;padding:12px 0;">Use o botao -&gt; CONFORM nas abas de busca para adicionar itens.</div>
             </div>
             <!-- Totais por categoria -->
