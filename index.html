@@ -203,7 +203,76 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .dev-form-field input,.dev-form-field textarea,.dev-form-field select{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.82rem;box-sizing:border-box;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;}
 .dev-form-field input:focus,.dev-form-field textarea:focus{border-color:var(--navy-700);outline:none;}
 @media print{
-  .header,.tabs-outer,.search-section,.proc-actions,.fav-hist-bar,.footer,.no-print{display:none!important;}
+  /* Hide everything except the conform form */
+  .header,.tabs-outer,.search-section,.proc-actions,.fav-hist-bar,
+  .footer,.no-print,.results-wrap > *:not(#conform-print-area),
+  #dev-lock,.chip,.btn-sm,button{display:none!important;}
+  
+  /* Show only the conform form */
+  body,html{margin:0;padding:0;background:#fff!important;}
+  .tab-content{display:block!important;}
+  #tab-dev,#dev-content,#devtab-conform{display:block!important;padding:0!important;margin:0!important;}
+  .results-wrap{padding:0!important;}
+  
+  @page{
+    size:A4 portrait;
+    margin:6mm 8mm;
+  }
+  
+  /* Scale conform form to fit 1 page */
+  #conform-form{
+    border:none!important;
+    border-radius:0!important;
+    padding:4px!important;
+    font-size:.68rem!important;
+    transform-origin:top left;
+    page-break-inside:avoid;
+    max-width:100%!important;
+    box-shadow:none!important;
+  }
+  
+  /* Compact table rows */
+  #conform-form td, #conform-form th{
+    padding:2px 5px!important;
+    font-size:.68rem!important;
+  }
+  
+  /* Compact input values in table */
+  #conform-form input[type=text]{
+    border:none!important;
+    border-bottom:1px solid #000!important;
+    border-radius:0!important;
+    padding:1px 3px!important;
+    font-size:.68rem!important;
+    width:90px!important;
+    background:transparent!important;
+  }
+  
+  /* Header tight */
+  #conform-form > div:first-child{
+    padding-bottom:3px!important;
+    margin-bottom:4px!important;
+  }
+  
+  /* Checkboxes and labels compact */
+  #conform-form label{
+    font-size:.68rem!important;
+    margin:0!important;
+  }
+  
+  /* Hide Limpar/Imprimir buttons */
+  #devtab-conform > div:first-child > div:last-child{display:none!important;}
+  
+  /* Patient/guia row compact */
+  #conform-form table{
+    width:100%!important;
+    border-collapse:collapse!important;
+  }
+  
+  /* Signature area compact */
+  .conform-footer-row{
+    margin-top:4px!important;
+  }
   body{background:#fff;}
   #conform-form input,#conform-form textarea,#conform-form select{border:none!important;border-bottom:1px solid #999!important;background:transparent!important;}
 }
@@ -616,7 +685,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <div style="font-weight:700;">RELATÓRIO DE CONFORMIDADE (CONFORM)</div>
             
           <!-- Itens adicionados via busca -->
-          <div style="margin-top:16px;">
+          <div style="margin-top:16px;" class="no-print">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <div style="font-weight:700;font-size:.82rem;color:var(--navy-700);">Itens Adicionados</div>
               <div id="conf-total-badge" style="display:none;background:var(--navy-700);color:#fff;font-size:.76rem;font-weight:700;padding:3px 10px;border-radius:7px;"></div>
@@ -625,7 +694,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <div style="color:var(--text-muted);text-align:center;padding:12px 0;">Use o botao -&gt; CONFORM nas abas de busca para adicionar itens.</div>
             </div>
             <!-- Totais por categoria -->
-            <div id="conf-totais-wrap" style="display:none;margin-top:12px;border-top:1.5px solid var(--border);padding-top:10px;">
+            <div id="conf-totais-wrap" class="no-print" style="display:none;margin-top:12px;border-top:1.5px solid var(--border);padding-top:10px;">
               <div style="font-weight:700;font-size:.78rem;color:var(--navy-700);margin-bottom:8px;">Totais por Categoria</div>
               <div id="conf-totais-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:.76rem;margin-bottom:8px;"></div>
               <div style="display:flex;justify-content:space-between;font-weight:800;font-size:.85rem;border-top:2px solid var(--navy-700);padding-top:8px;">
@@ -2010,6 +2079,7 @@ function setDevTab(id, btn) {
     btn.style.borderColor = 'var(--gold)';
   }
   if (id === 'cbhpmcalc') { var cc = document.getElementById('cc-porte'); if (cc) calcEdital(); }
+  if (id === 'conform') { if (typeof calcConformTotal === 'function') calcConformTotal(); }
 }
 
 // ── Mapeamento categoria → campo do CONFORM ──────────────────────────────
@@ -2130,6 +2200,28 @@ function clearConform() {
     if (el) el.value = defs[id];
   });
   if (typeof calcConformTotal === 'function') calcConformTotal();
+}
+
+
+function calcConformTotal() {
+  var fields = ['cf_enfermaria','cf_apartamento','cf_uti','cf_diarias',
+    'cf_taxas','cf_honorarios','cf_honor_outros','cf_medicamentos',
+    'cf_gases','cf_mat_desc','cf_exames_lab','cf_exames_img',
+    'cf_outros_exames','cf_opme','cf_pacotes','cf_outros'];
+  var total = 0;
+  fields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && el.value) {
+      var v = parseFloat(el.value.replace(',','.').replace(/[^\d.]/g,'')) || 0;
+      total += v;
+    }
+  });
+  // Update display
+  var tot = document.getElementById('cf_total_cobrado');
+  if (tot) tot.textContent = brl(total);
+  // Also fill val_auditado if empty
+  var aud = document.getElementById('cf_val_auditado');
+  if (aud && !aud.value) aud.value = total.toFixed(2).replace('.',',');
 }
 
 function printConform() { window.print(); }
