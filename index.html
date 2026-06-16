@@ -1082,16 +1082,44 @@ function buildProcCard(d){
   vals.appendChild(mkPV('C\u00f3digo',d.codigo,d.codigo));
   if(d.amb) vals.appendChild(mkPV('Amb',brl(d.amb),brl(d.amb)));
   if(d.hosp) vals.appendChild(mkPV('Hosp',brl(d.hosp),brl(d.hosp)));
-  // Item 6.2: Apto/UTI/HD dobra o porte para atos cirurgicos (IELE)
-  if(d.pi==='IELE'&&d.hosp){
+  // Breakdown porte+aux+anest para IELE com porte_cbhpm
+  if(d.pi==='IELE'&&d.porte_cbhpm&&d.hosp){
+    var PANEST_P={0:0,1:177.47,2:259.83,3:382.42,4:565.41,5:874.69,6:1220.58,7:1736.61,8:2291.09};
+    var pv2=d.hosp; var aux1p=d.num_aux&&d.num_aux>0?pv2*0.30:0; var aux2p=d.num_aux&&d.num_aux>1?pv2*0.30:0;
+    var vanp=d.porte_anest?(PANEST_P[d.porte_anest]||0):0;
+    function mkPVg(lbl,v,hi){
+      var dv=document.createElement('div');dv.className='pv';
+      dv.style.cssText=hi?'background:rgba(45,90,39,.1);border-left:2px solid #2d5a27;cursor:pointer;':'cursor:pointer;';
+      var sl=document.createElement('span');sl.className='pv-label';sl.textContent=lbl;
+      var sv=document.createElement('span');sv.className='pv-val';sv.style.cssText='font-size:.82rem;font-weight:800;color:'+(hi?'#1a5c15':'var(--navy-700)')+';';
+      sv.textContent=brl(v);dv.appendChild(sl);dv.appendChild(sv);
+      dv.addEventListener('click',(function(vv){return function(){copyT(brl(vv));};})(v));
+      return dv;
+    }
+    // ENF section header
+    var hEnf=document.createElement('div');hEnf.className='pv';
+    hEnf.style.cssText='background:var(--bg);border-left:2px solid var(--navy-600);padding:2px 8px;';
+    var hEnfL=document.createElement('span');hEnfL.className='pv-label';hEnfL.style.cssText='font-weight:800;font-size:.65rem;color:var(--navy-700);';hEnfL.textContent='ENFERMARIA';
+    hEnf.appendChild(hEnfL); vals.appendChild(hEnf);
+    if(aux1p) vals.appendChild(mkPVg('1 Aux (30%) Enf',aux1p,false));
+    if(aux2p) vals.appendChild(mkPVg('2 Aux (30%) Enf',aux2p,false));
+    if(vanp) vals.appendChild(mkPVg('Porte Anest P'+d.porte_anest,vanp,false));
+    // APTO section header
+    var hApto=document.createElement('div');hApto.className='pv';
+    hApto.style.cssText='background:rgba(45,90,39,.05);border-left:2px solid #2d5a27;padding:2px 8px;margin-top:2px;';
+    var hAptoL=document.createElement('span');hAptoL.className='pv-label';hAptoL.style.cssText='font-weight:800;font-size:.65rem;color:#1a5c15;';hAptoL.textContent='APTO / UTI / HOSP-DIA (x2)';
+    hApto.appendChild(hAptoL); vals.appendChild(hApto);
+    vals.appendChild(mkPVg('Cirurgiao (x2)',pv2*2,true));
+    if(aux1p) vals.appendChild(mkPVg('1 Aux (x2)',aux1p*2,true));
+    if(aux2p) vals.appendChild(mkPVg('2 Aux (x2)',aux2p*2,true));
+    if(vanp) vals.appendChild(mkPVg('Porte Anest P'+d.porte_anest,vanp,false));
+  } else if(d.pi==='IELE'&&d.hosp){
     var aptoDiv=document.createElement('div');aptoDiv.className='pv';
     aptoDiv.style.cssText='background:rgba(45,90,39,.1);cursor:pointer;border-left:2px solid #2d5a27;';
-    aptoDiv.title='Apto/UTI/Hosp-Dia x2 (Item 6.2 CBHPM)';
-    var al=document.createElement('span');al.className='pv-label';al.textContent='Apto/UTI (x2)';
-    var av=document.createElement('span');av.className='pv-val';
-    av.style.cssText='font-size:.88rem;font-weight:800;color:#1a5c15;';
-    av.textContent=brl(d.hosp*2)+' (x2)';
-    aptoDiv.appendChild(al);aptoDiv.appendChild(av);
+    var al2=document.createElement('span');al2.className='pv-label';al2.textContent='Apto/UTI (x2)';
+    var av2=document.createElement('span');av2.className='pv-val';av2.style.cssText='font-size:.88rem;font-weight:800;color:#1a5c15;';
+    av2.textContent=brl(d.hosp*2)+' (x2)';
+    aptoDiv.appendChild(al2);aptoDiv.appendChild(av2);
     aptoDiv.addEventListener('click',(function(v){return function(){copyT(brl(v));};})(d.hosp*2));
     vals.appendChild(aptoDiv);
   }
@@ -1636,20 +1664,35 @@ function buildValCard(d) {
   }
   if (isIELE) {
     if (porteVal > 0) {
-      var aux1Enf = d.num_aux && d.num_aux > 0 ? porteVal * 0.30 : 0;
-      var aux2Enf = d.num_aux && d.num_aux > 1 ? porteVal * 0.30 : 0;
-      var totalEnf = porteVal + aux1Enf + aux2Enf;
-      var totalApto = porteVal*2 + (aux1Enf*2) + (aux2Enf*2);
-      // Enfermaria row
-      grid.appendChild(makeValBox('Cirurgiao — Enf', brl(porteVal), false, 'P'+d.porte_cbhpm+' Item 8.4'));
-      if (aux1Enf) grid.appendChild(makeValBox('1 Aux 30% — Enf', brl(aux1Enf), false, 'Subporte'));
-      if (aux2Enf) grid.appendChild(makeValBox('2 Aux 30% — Enf', brl(aux2Enf), false, 'Subporte'));
-      grid.appendChild(makeValBox('TOTAL Enf', brl(totalEnf), false, 'Honorarios Enf'));
-      // Apto/UTI row (x2)
-      grid.appendChild(makeValBox('Cirurgiao — Apto/UTI', brl(porteVal*2), true, 'Item 6.2 x2'));
-      if (aux1Enf) grid.appendChild(makeValBox('1 Aux 30% — Apto/UTI', brl(aux1Enf*2), true, 'x2'));
-      if (aux2Enf) grid.appendChild(makeValBox('2 Aux 30% — Apto/UTI', brl(aux2Enf*2), true, 'x2'));
-      grid.appendChild(makeValBox('TOTAL Apto/UTI', brl(totalApto), true, 'Honorarios Apto/UTI'));
+      var aux1 = d.num_aux && d.num_aux > 0 ? porteVal * 0.30 : 0;
+      var aux2 = d.num_aux && d.num_aux > 1 ? porteVal * 0.30 : 0;
+      var PANEST_V = {0:0,1:177.47,2:259.83,3:382.42,4:565.41,5:874.69,6:1220.58,7:1736.61,8:2291.09};
+      var vanest = d.porte_anest ? (PANEST_V[d.porte_anest]||0) : 0;
+      var totalEnf  = porteVal + aux1 + aux2;
+      var totalApto = porteVal*2 + aux1*2 + aux2*2;
+      // === ENFERMARIA ===
+      var hdrEnf = document.createElement('div');
+      hdrEnf.style.cssText = 'grid-column:1/-1;font-size:.7rem;font-weight:700;color:var(--navy-700);text-transform:uppercase;letter-spacing:.08em;padding:4px 0 2px;border-bottom:1.5px solid var(--border);margin-top:2px;';
+      hdrEnf.textContent = 'Enfermaria';
+      grid.appendChild(hdrEnf);
+      grid.appendChild(makeValBox('Cirurgiao', brl(porteVal), false, 'P'+d.porte_cbhpm+' Item 8.4'));
+      if (aux1) grid.appendChild(makeValBox('1 Auxiliar (30%)', brl(aux1), false, 'Subporte'));
+      if (aux2) grid.appendChild(makeValBox('2 Auxiliar (30%)', brl(aux2), false, 'Subporte'));
+      if (vanest) grid.appendChild(makeValBox('Porte Anest P'+d.porte_anest, brl(vanest), false, 'Item 8.17'));
+      var totEnfEl = makeValBox('TOTAL ENF', brl(totalEnf + vanest), false, 'Cirurgiao+Aux+Anest');
+      totEnfEl.style.background = 'rgba(45,90,39,.06)';
+      grid.appendChild(totEnfEl);
+      // === APTO / UTI / HOSP-DIA ===
+      var hdrApto = document.createElement('div');
+      hdrApto.style.cssText = 'grid-column:1/-1;font-size:.7rem;font-weight:700;color:#1a5c15;text-transform:uppercase;letter-spacing:.08em;padding:4px 0 2px;border-bottom:1.5px solid #2d5a27;margin-top:4px;';
+      hdrApto.textContent = 'Apartamento / UTI / Hosp-Dia (x2 — Item 6.2)';
+      grid.appendChild(hdrApto);
+      grid.appendChild(makeValBox('Cirurgiao (x2)', brl(porteVal*2), true, 'P'+d.porte_cbhpm+' x2'));
+      if (aux1) grid.appendChild(makeValBox('1 Auxiliar (x2)', brl(aux1*2), true, 'Subporte x2'));
+      if (aux2) grid.appendChild(makeValBox('2 Auxiliar (x2)', brl(aux2*2), true, 'Subporte x2'));
+      if (vanest) grid.appendChild(makeValBox('Porte Anest P'+d.porte_anest, brl(vanest), false, 'Item 8.17'));
+      var totAptoEl = makeValBox('TOTAL APTO/UTI', brl(totalApto + vanest), true, 'Cirurgiao+Aux+Anest');
+      grid.appendChild(totAptoEl);
     } else if (d.hosp) {
       grid.appendChild(makeValBox('Enf', brl(d.hosp), false, 'Item 8.4'));
       grid.appendChild(makeValBox('Apto / UTI / Hosp-Dia', brl(d.hosp * 2), true, 'Item 6.2 (x2)'));
