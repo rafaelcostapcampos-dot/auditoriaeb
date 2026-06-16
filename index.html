@@ -203,69 +203,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .dev-form-field input,.dev-form-field textarea,.dev-form-field select{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.82rem;box-sizing:border-box;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;}
 .dev-form-field input:focus,.dev-form-field textarea:focus{border-color:var(--navy-700);outline:none;}
 @media print{
-  /* Visibility trick: hide everything, then show only the CONFORM form */
-  @page{size:A4 portrait;margin:8mm 10mm;}
-  
-  body *{visibility:hidden!important;}
-  
-  #conform-form,
-  #conform-form *{visibility:visible!important;}
-  
-  /* Hide items section - use display:none which overrides visibility */
-  #conform-form .no-print{display:none!important;visibility:hidden!important;}
-  .no-print{display:none!important;}
-  #conf-items-list,#conf-items-list *{display:none!important;visibility:hidden!important;}
-  #conf-totais-wrap,#conf-totais-wrap *{display:none!important;visibility:hidden!important;}
-  #conf-total-badge{display:none!important;}
-  
-  /* Position the form at top of page */
-  #conform-form{
-    position:fixed!important;
-    left:0!important;top:0!important;
-    width:100%!important;
-    font-size:.68rem!important;
-    border:none!important;
-    border-radius:0!important;
-    padding:4px 6px!important;
-    box-shadow:none!important;
-    background:#fff!important;
-  }
-  
-  /* Compact table */
-  #conform-form table{width:100%!important;border-collapse:collapse!important;}
-  #conform-form td,#conform-form th{padding:2px 5px!important;font-size:.68rem!important;}
-  
-  /* Input fields as simple underlines */
-  #conform-form input[type=text]{
-    border:none!important;border-bottom:1px solid #333!important;
-    border-radius:0!important;padding:0 2px!important;
-    font-size:.68rem!important;background:transparent!important;
-    width:auto!important;min-width:60px!important;
-    -webkit-appearance:none!important;
-  }
-  
-  /* Select as text */
-  #conform-form select{
-    border:none!important;border-bottom:1px solid #333!important;
-    font-size:.68rem!important;background:transparent!important;
-    -webkit-appearance:none!important;
-  }
-  
-  /* Header tight */
-  #conform-form>div:first-child{
-    padding-bottom:3px!important;margin-bottom:4px!important;
-  }
-  
-  /* Labels compact */
-  #conform-form label{font-size:.68rem!important;gap:2px!important;}
-  
-  /* Total row highlighted */
-  #conform-form tr[style*="font-weight:700"] td{
-    font-size:.76rem!important;font-weight:800!important;
-  }
-  
-  /* Signature area */
-  .conform-sig-area{margin-top:6px!important;}
+  /* Simple: hide everything except main content */
+  .header,.tabs-outer,.search-section,.fav-hist-bar,.footer,
+  .no-print,.chip,.btn-sm,button,.proc-actions,
+  #dev-lock,.results-meta,.initial-state,.empty-state,
+  .tab-content:not(#print-target){display:none!important;}
+  body{background:#fff!important;}
 }
 </style>
 </head>
@@ -2203,7 +2146,34 @@ function calcConformTotal() {
   if (aud && !aud.value) aud.value = total.toFixed(2).replace('.',',');
 }
 
-function printConform() { window.print(); }
+function printConform() {
+  var form = document.getElementById('conform-form');
+  if (!form) { window.print(); return; }
+
+  // Clone form, remove no-print sections
+  var clone = form.cloneNode(true);
+  clone.querySelectorAll('.no-print,[id="conf-items-list"],[id="conf-totais-wrap"],[id="conf-total-badge"]')
+    .forEach(function(el){ el.parentNode && el.parentNode.removeChild(el); });
+
+  var pw = window.open('','_blank','width=820,height=1060');
+  if (!pw) { alert('Permitir pop-ups para imprimir.'); return; }
+  pw.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CONFORM - PMGuBH</title><style>'
+    + 'body{font-family:Arial,sans-serif;font-size:10px;margin:6mm;background:#fff;color:#000;}'
+    + 'table{width:100%;border-collapse:collapse;}'
+    + 'td,th{border:1px solid #bbb;padding:2px 5px;font-size:10px;vertical-align:middle;}'
+    + 'input[type=text]{border:none;border-bottom:1px solid #000;background:transparent;font-size:10px;width:80px;outline:none;}'
+    + 'select{border:none;border-bottom:1px solid #000;background:transparent;font-size:10px;outline:none;-webkit-appearance:none;}'
+    + 'input[type=checkbox]{width:12px;height:12px;}'
+    + '.no-print{display:none!important;}'
+    + 'div[style*="border:1.5px"]{border:1px solid #ccc!important;border-radius:0!important;padding:4px!important;}'
+    + '@page{size:A4 portrait;margin:8mm 10mm;}'
+    + 'h2,h3,h4{font-size:11px;margin:2px 0;}'
+    + '</style></head><body>'
+    + clone.outerHTML
+    + '</body></html>');
+  pw.document.close();
+  setTimeout(function(){ pw.focus(); pw.print(); }, 600);
+}
 
 </script>
 </body>
