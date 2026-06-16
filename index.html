@@ -58,6 +58,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .search-row input:focus{border-color:var(--gold);background:rgba(255,255,255,.15);}
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;padding-top:10px;}
 .chip{background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 14px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.results-wrap .chip{background:var(--bg);color:var(--navy-700);border:1.5px solid var(--border);}
+.results-wrap .chip.active,.results-wrap .chip:hover{background:var(--navy-700);color:#fff;border-color:var(--navy-700);}
+.results-wrap .chip[style*="gold"]{background:var(--gold)!important;color:var(--navy-900)!important;border-color:var(--gold)!important;}
 .chip:hover{background:rgba(255,255,255,.2);color:#fff;}
 .chip.active{background:var(--gold);color:var(--navy-900);border-color:var(--gold);}
 .results-wrap{padding:16px 20px;}
@@ -565,7 +568,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
 
         <!-- CONFORM -->
-        <div id="devtab-conform">
+          <!-- Modal categoria -->
+  <div id="conf-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:22px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+      <div style="font-weight:700;font-size:.9rem;color:var(--navy-900);margin-bottom:3px;" id="conf-modal-nome">Item</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:12px;" id="conf-modal-info"></div>
+      <label style="display:block;font-size:.72rem;font-weight:700;color:var(--text-muted);margin-bottom:4px;">Valor (R$)</label>
+      <input type="text" id="conf-modal-val" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.9rem;font-weight:700;box-sizing:border-box;margin-bottom:10px;">
+      <label style="display:block;font-size:.72rem;font-weight:700;color:var(--text-muted);margin-bottom:4px;">Categoria no CONFORM</label>
+      <select id="conf-modal-cat" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:.82rem;box-sizing:border-box;margin-bottom:14px;">
+        <option value="honor_med">Honorarios Medicos</option>
+        <option value="honor_out">Honorarios Outros Profissionais</option>
+        <option value="exame_lab">Exames Laboratoriais</option>
+        <option value="exame_img">Exames de Imagem</option>
+        <option value="exame_out">Outros Exames / Procedimentos</option>
+        <option value="enf">Diarias - Enfermaria</option>
+        <option value="apto">Diarias - Apartamento</option>
+        <option value="uti">Diarias - UTI</option>
+        <option value="taxas">Taxas de Sala / SAPA</option>
+        <option value="opme">OPME</option>
+        <option value="pacotes">Pacotes Cirurgicos</option>
+        <option value="med">Medicamentos</option>
+        <option value="gases">Gases Medicinais</option>
+        <option value="mat">Materiais Descartaveis</option>
+        <option value="outros">Outros</option>
+      </select>
+      <div style="display:flex;gap:8px;">
+        <button onclick="confModalCancelar()" style="flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px;font-size:.82rem;cursor:pointer;">Cancelar</button>
+        <button onclick="confModalConfirmar()" style="flex:2;background:linear-gradient(135deg,var(--navy-700),var(--navy-600));color:#fff;border:none;border-radius:8px;padding:9px;font-size:.82rem;font-weight:700;cursor:pointer;">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+<div id="devtab-conform">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
             <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.92rem;color:var(--navy-700);">Relatório de Conformidade (CONFORM) — Anexo II</div>
             <div style="display:flex;gap:8px;">
@@ -579,7 +614,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <div style="font-size:.8rem;">CABEÇALHO DA ORGANIZAÇÃO MILITAR</div>
               <div style="font-weight:700;margin-top:4px;">SERVIÇO DE AUDITORIA DE CONTAS MÉDICAS</div>
               <div style="font-weight:700;">RELATÓRIO DE CONFORMIDADE (CONFORM)</div>
+            
+          <!-- Itens adicionados via busca -->
+          <div style="margin-top:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:700;font-size:.82rem;color:var(--navy-700);">Itens Adicionados</div>
+              <div id="conf-total-badge" style="display:none;background:var(--navy-700);color:#fff;font-size:.76rem;font-weight:700;padding:3px 10px;border-radius:7px;"></div>
             </div>
+            <div id="conf-items-list" style="font-size:.78rem;">
+              <div style="color:var(--text-muted);text-align:center;padding:12px 0;">Use o botao -&gt; CONFORM nas abas de busca para adicionar itens.</div>
+            </div>
+            <!-- Totais por categoria -->
+            <div id="conf-totais-wrap" style="display:none;margin-top:12px;border-top:1.5px solid var(--border);padding-top:10px;">
+              <div style="font-weight:700;font-size:.78rem;color:var(--navy-700);margin-bottom:8px;">Totais por Categoria</div>
+              <div id="conf-totais-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:.76rem;margin-bottom:8px;"></div>
+              <div style="display:flex;justify-content:space-between;font-weight:800;font-size:.85rem;border-top:2px solid var(--navy-700);padding-top:8px;">
+                <span>TOTAL GERAL</span>
+                <span id="conf-total-geral" style="color:var(--navy-700);font-family:monospace;">R$ 0,00</span>
+              </div>
+            </div>
+          </div>
+
+          </div>
             <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
               <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="cf_amb"> Ambulatorial</label>
               <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="cf_int" checked> Internação Hospitalar</label>
@@ -710,7 +766,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div><!-- /devtab-conform -->
 
         <!-- CONCURSO / HONORÁRIOS -->
-        <div id="devtab-cbhpmcalc" style="display:none;">
+        <div <div id="devtab-cbhpmcalc" style="display:none;">
 
   <!-- Busca rapida por codigo -->
   <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px;">
@@ -1743,74 +1799,100 @@ function calcLimpar() {
 }
 
 function calcEdital() {
-  var tipo   = document.getElementById('cc-tipo').value;
-  var porte  = Math.max(1, Math.min(14, parseInt(document.getElementById('cc-porte').value)||1));
-  var varP   = document.getElementById('cc-var').value || 'A';
-  var acom   = parseFloat(document.getElementById('cc-acom').value) || 1;
-  var modal  = parseFloat(document.getElementById('cc-modal').value) || 1;
-  var numAux = parseInt(document.getElementById('cc-aux').value) || 0;
-  var paNum  = parseInt(document.getElementById('cc-anest').value) || 0;
-
-  var tabela = (tipo === 'sadt') ? PORTE_SADT : PORTE_CIR;
-  var row = tabela[porte];
-  if (!row) return;
+  var tipo   = (document.getElementById('cc-tipo')||{value:'cir'}).value;
+  var porte  = Math.max(1, Math.min(14, parseInt((document.getElementById('cc-porte')||{value:4}).value)||4));
+  var varP   = (document.getElementById('cc-var')||{value:'A'}).value || 'A';
+  var acom   = parseFloat((document.getElementById('cc-acom')||{value:1}).value) || 1;
+  var modal  = parseFloat((document.getElementById('cc-modal')||{value:1}).value) || 1;
+  var numAux = parseInt((document.getElementById('cc-aux')||{value:0}).value) || 0;
+  var paNum  = parseInt((document.getElementById('cc-anest')||{value:0}).value) || 0;
+  var tabela = (tipo==='sadt') ? PORTE_SADT : PORTE_CIR;
+  var row = tabela[porte]; if(!row) return;
   var baseVal = row[varP] || row['A'];
-
-  // Cirurgico dobra em Apto/UTI; SADT nao dobra (item 6.2)
-  var isCir = (tipo === 'cir');
-  var valCirurgiao = baseVal * (isCir && acom === 2 ? 2 : 1) * modal;
-  var valAux = baseVal * (isCir && acom === 2 ? 2 : 1) * 0.30 * modal;  // 30% cada aux
-  var valAnest = PORTE_ANEST[paNum] || 0;
-  var totalHonor = valCirurgiao + (valAux * numAux);
-  var totalGeral = totalHonor + valAnest;
-
-  var acomLabel = (isCir && acom === 2) ? 'Apto/UTI/HD (x2)' : 'Enfermaria';
-  var porteStr = porte + varP;
-
-  // Build result
+  var isCir = (tipo==='cir');
+  var mult = (isCir && acom===2) ? 2 : 1;
+  var valCir = baseVal * mult * modal;
+  var valAux = baseVal * mult * 0.30 * modal;
+  var PANEST_L = {0:0,1:177.47,2:259.83,3:382.42,4:565.41,5:874.69,6:1220.58,7:1736.61,8:2291.09};
+  var valAnest = PANEST_L[paNum] || 0;
   var res = document.getElementById('cc-result');
   var grid = document.getElementById('cc-grid');
   var formula = document.getElementById('cc-formula');
-  if (!res || !grid) return;
+  if (!res||!grid) return;
 
-  function mkBox(label, val, highlight) {
-    return '<div style="background:'+(highlight?'rgba(45,90,39,.12)':'var(--bg)')+';border-radius:9px;padding:10px 12px;border:'+(highlight?'1.5px solid #2d5a27':'1px solid var(--border)')+';cursor:pointer;" onclick="copyT(\''+val.toFixed(2).replace('.',',')+'\');" title="Copiar">'
-      + '<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:'+(highlight?'#1a5c15':'var(--text-muted)')+';margin-bottom:4px;">'+label+'</div>'
-      + '<div style="font-family:monospace;font-size:.95rem;font-weight:800;color:'+(highlight?'#1a5c15':'var(--navy-700)')+';">'+brl(val)+'</div>'
+  // Build EDITABLE grid
+  function mkEditRow(label, val, fieldId, sublabel) {
+    return '<div style="background:var(--bg);border-radius:9px;padding:9px 11px;border:1px solid var(--border);">'
+      + '<div style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">'+label+'</div>'
+      + '<div style="display:flex;align-items:center;gap:6px;">'
+      + '<span style="font-size:.78rem;color:#666;">R$</span>'
+      + '<input type="text" id="'+fieldId+'" value="'+val.toFixed(2).replace('.',',')+'"'
+      + ' oninput="calcEditalTotal()" '
+      + ' style="flex:1;border:none;background:transparent;font-family:monospace;font-size:.92rem;font-weight:800;color:var(--navy-700);outline:none;min-width:0;">'
+      + '</div>'
+      + (sublabel ? '<div style="font-size:.63rem;color:#888;margin-top:2px;">'+sublabel+'</div>' : '')
       + '</div>';
   }
 
-  var boxes = '';
-  var porteLabel = 'P'+porteStr + (isCir?' (Item 8.4)':' (Item 8.5)');
-  boxes += mkBox('Base P'+porteStr, baseVal, false);
-  boxes += mkBox('Cirurgiao ' + acomLabel, valCirurgiao, false);
-  if (numAux >= 1) boxes += mkBox('1 Auxiliar (30%)', valAux, false);
-  if (numAux >= 2) boxes += mkBox('2 Auxiliar (30%)', valAux, false);
-  if (numAux >= 3) boxes += mkBox('3 Auxiliar (30%)', valAux, false);
-  if (valAnest > 0) boxes += mkBox('Anest PA'+paNum, valAnest, false);
-  boxes += mkBox('TOTAL HONORARIOS', totalHonor, false);
-  boxes += mkBox('TOTAL GERAL (c/ anest)', totalGeral, true);
+  var porteStr = porte + varP;
+  var acomLabel = (isCir&&acom===2) ? 'x2 Apto/UTI' : 'Enf';
+  var ghtml = '';
+  ghtml += mkEditRow('Cirurgiao (P'+porteStr+' '+acomLabel+')', valCir, 'cc-val-cir', 'Item 8.4 | clique para editar');
+  for (var ai=1; ai<=numAux; ai++) {
+    ghtml += mkEditRow(ai+'o Auxiliar (30%)', valAux, 'cc-val-aux'+ai, 'Subporte | editavel');
+  }
+  if (valAnest > 0) {
+    ghtml += mkEditRow('Anestesista PA'+paNum, valAnest, 'cc-val-anest', 'Item 8.17 | editavel');
+  }
+  // Total row (readonly, computed)
+  ghtml += '<div style="background:rgba(45,90,39,.1);border-radius:9px;padding:9px 11px;border:1.5px solid #2d5a27;">'
+    + '<div style="font-size:.65rem;font-weight:700;color:#1a5c15;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">TOTAL</div>'
+    + '<div style="font-family:monospace;font-size:.95rem;font-weight:800;color:#1a5c15;" id="cc-val-total">' + brl(valCir + valAux*numAux + valAnest) + '</div>'
+    + '</div>';
 
-  grid.innerHTML = boxes;
+  grid.innerHTML = ghtml;
+  grid.setAttribute('data-numaux', numAux);
+  grid.setAttribute('data-hastanest', valAnest > 0 ? '1' : '0');
 
-  // Formula
-  var fParts = ['P'+porteStr+'='+brl(baseVal)];
-  if (isCir && acom === 2) fParts.push('x2 (Apto)');
-  if (modal !== 1) fParts.push('x'+modal);
-  if (numAux > 0) fParts.push(numAux+'aux x30%='+brl(valAux*numAux));
-  if (valAnest > 0) fParts.push('PA'+paNum+'='+brl(valAnest));
-  formula.innerHTML = '<b>Formula:</b> ' + fParts.join(' + ') + ' = <b>' + brl(totalGeral) + '</b>'
-    + '<br><small style="color:#888;">Item 8.4 (Cir) / Item 8.17 (Anest) / Item 6.2 (x2 em Apto/UTI/HD para atos cirurgicos)</small>';
+  if (formula) {
+    formula.innerHTML = '<b>Base:</b> P'+porteStr+'='+brl(baseVal)
+      +(isCir&&acom===2?' x2 Apto/UTI':'')+(modal!==1?' x'+modal:'')
+      +'<br><small style="color:#888;">Clique nos valores para editar antes de enviar ao CONFORM.</small>';
+  }
 
-  // Store for CONFORM
-  res._valCir = valCirurgiao;
-  res._valAnest = valAnest;
-  res._total = totalGeral;
-  res._porteStr = porteStr;
-  res._numAux = numAux;
-  res._valAux = valAux;
-
+  res._numaux = numAux;
+  res._hasanest = valAnest > 0;
   res.style.display = 'block';
+}
+
+function calcEditalTotal() {
+  var res = document.getElementById('cc-result');
+  var grid = document.getElementById('cc-grid');
+  if (!res||!grid) return;
+  function getVal(id) {
+    var el = document.getElementById(id);
+    return el ? (parseFloat(el.value.replace(',','.').replace(/[^\d.]/g,''))||0) : 0;
+  }
+  var total = getVal('cc-val-cir');
+  var numAux = parseInt(grid.getAttribute('data-numaux'))||0;
+  for (var i=1;i<=numAux;i++) total += getVal('cc-val-aux'+i);
+  if (grid.getAttribute('data-hastanest')==='1') total += getVal('cc-val-anest');
+  var el = document.getElementById('cc-val-total');
+  if (el) el.textContent = brl(total);
+  res._total = total;
+}
+
+function calcEnviarConform() {
+  var res = document.getElementById('cc-result');
+  if (!res || res.style.display==='none') return;
+  var d = _calcProc || {codigo:'', nome:'Procedimento manual', pi:'IELE'};
+  function getVal(id) {
+    var el = document.getElementById(id);
+    return el ? (parseFloat(el.value.replace(',','.').replace(/[^\d.]/g,''))||0) : 0;
+  }
+  var valCir = getVal('cc-val-cir');
+  var valAnest = res._hasanest ? getVal('cc-val-anest') : 0;
+  enviarParaConform(d, valCir, valCir*2, valAnest);
 }
 
 function calcEnviarConform() {
@@ -1820,6 +1902,8 @@ function calcEnviarConform() {
   enviarParaConform(d, res._valCir || 0, (res._valCir||0)*2, res._valAnest || 0);
 }
 
+
+
 // ============ ABA EM DESENVOLVIMENTO ============
 function checkDevPwd() {
   var pwd = document.getElementById('devPwd');
@@ -1827,33 +1911,29 @@ function checkDevPwd() {
   if (pwd.value === '050799') {
     document.getElementById('dev-lock').style.display = 'none';
     document.getElementById('dev-content').style.display = 'block';
-    setDevTab('conform', document.querySelector('#dev-content .chip'));
+    var firstChip = document.querySelector('#dev-content .chip');
+    setDevTab('conform', firstChip);
   } else {
     var err = document.getElementById('devPwdErr');
-    if (err) { err.style.display = 'block'; }
-    pwd.value = '';
-    pwd.focus();
+    if (err) err.style.display = 'block';
+    pwd.value = ''; pwd.focus();
   }
 }
 
-function initDev() {
-  // Called when the dev tab is opened
-  // If already unlocked, keep showing content
-}
+function initDev() {}
 
 function setDevTab(id, btn) {
-  // Hide all dev sub-tabs
-  var tabs = ['devtab-conform','devtab-cbhpmcalc','devtab-portebus'];
-  tabs.forEach(function(t) {
+  ['devtab-conform','devtab-cbhpmcalc','devtab-portebus'].forEach(function(t) {
     var el = document.getElementById(t);
     if (el) el.style.display = 'none';
   });
-  // Remove active from all chips in dev
   var devContent = document.getElementById('dev-content');
   if (devContent) {
-    devContent.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+    devContent.querySelectorAll('.chip').forEach(function(c) {
+      c.classList.remove('active');
+      c.style.background = ''; c.style.color = ''; c.style.borderColor = '';
+    });
   }
-  // Show selected tab
   var target = document.getElementById('devtab-' + id);
   if (target) target.style.display = 'block';
   if (btn) {
@@ -1862,13 +1942,134 @@ function setDevTab(id, btn) {
     btn.style.color = 'var(--navy-900)';
     btn.style.borderColor = 'var(--gold)';
   }
-  // Init actions for each tab
-  if (id === 'cbhpmcalc') calcEdital();
-  if (id === 'portebus') {
-    var pb = document.getElementById('pb-input');
-    if (pb && pb.value) doPorteSearch();
-  }
+  if (id === 'cbhpmcalc') { var cc = document.getElementById('cc-porte'); if (cc) calcEdital(); }
 }
+
+// ── Mapeamento categoria → campo do CONFORM ──────────────────────────────
+var CAT_TO_FIELD = {
+  'honor_med':  'cf_honorarios',
+  'honor_out':  'cf_honor_outros',
+  'exame_lab':  'cf_exames_lab',
+  'exame_img':  'cf_exames_img',
+  'exame_out':  'cf_outros_exames',
+  'enf':        'cf_diarias',
+  'apto':       'cf_diarias',
+  'uti':        'cf_diarias',
+  'taxas':      'cf_taxas',
+  'opme':       'cf_opme',
+  'pacotes':    'cf_pacotes',
+  'med':        'cf_medicamentos',
+  'gases':      'cf_gases',
+  'mat':        'cf_mat_desc',
+  'outros':     'cf_outros',
+};
+var CAT_LABELS = {
+  'honor_med':'Honorarios Medicos','honor_out':'Honorarios Outros Profissionais',
+  'exame_lab':'Exames Laboratoriais','exame_img':'Exames de Imagem',
+  'exame_out':'Outros Exames','enf':'Diarias - Enfermaria',
+  'apto':'Diarias - Apartamento','uti':'Diarias - UTI',
+  'taxas':'Taxas de Sala','opme':'OPME','pacotes':'Pacotes',
+  'med':'Medicamentos','gases':'Gases Medicinais',
+  'mat':'Materiais Descartaveis','outros':'Outros',
+};
+
+var _pendingItem = null;
+
+function enviarParaConform(d, valEnf, valApto, valAnest) {
+  _pendingItem = {d:d, valEnf:valEnf, valApto:valApto, valAnest:valAnest};
+  var modal = document.getElementById('conf-modal');
+  if (!modal) return;
+  document.getElementById('conf-modal-nome').textContent = d.nome || 'Procedimento';
+  var info = (d.codigo||'') + (d.pi ? '  |  '+d.pi : '')
+    + (valEnf ? '  |  Enf: '+brl(valEnf) : '')
+    + (valApto ? '  |  Apto: '+brl(valApto) : '');
+  document.getElementById('conf-modal-info').textContent = info;
+  document.getElementById('conf-modal-val').value = valEnf ? valEnf.toFixed(2).replace('.',',') : '';
+  var cat = 'honor_med';
+  if (d.pi==='OCSA') cat = 'exame_out';
+  if (d.pi==='ONCO') cat = 'exame_out';
+  document.getElementById('conf-modal-cat').value = cat;
+  modal.style.display = 'flex';
+}
+
+function confModalCancelar() {
+  document.getElementById('conf-modal').style.display = 'none';
+  _pendingItem = null;
+}
+
+function confModalConfirmar() {
+  if (!_pendingItem) return;
+  var valStr = document.getElementById('conf-modal-val').value;
+  var val = parseFloat(valStr.replace(',','.').replace(/[^\d.]/g,'')) || 0;
+  var cat = document.getElementById('conf-modal-cat').value;
+  var fieldId = CAT_TO_FIELD[cat] || 'cf_outros';
+  var field = document.getElementById(fieldId);
+
+  if (field) {
+    // ADD to existing value in the correct CONFORM field
+    var current = parseFloat((field.value||'0').replace(',','.').replace(/[^\d.]/g,'')) || 0;
+    var newVal = current + val;
+    field.value = newVal.toFixed(2).replace('.',',');
+    if (typeof calcConformTotal === 'function') calcConformTotal();
+    // Also fill obs if honor
+    if (cat === 'honor_med') {
+      var obs = document.getElementById('cf_honorarios_obs');
+      if (obs) {
+        var nome = (_pendingItem.d.nome||'').substring(0,40);
+        obs.value = obs.value ? obs.value + '; ' + nome : nome;
+      }
+    }
+    if (cat === 'honor_out') {
+      var obs2 = document.getElementById('cf_honor_outros_obs');
+      if (obs2) {
+        var nome2 = (_pendingItem.d.nome||'').substring(0,40);
+        obs2.value = obs2.value ? obs2.value + '; ' + nome2 : nome2;
+      }
+    }
+  }
+
+  confModalCancelar();
+
+  // Navigate to CONFORM tab
+  var devTabContent = document.getElementById('tab-dev');
+  var isDevVisible = devTabContent && devTabContent.classList.contains('active');
+  if (!isDevVisible) {
+    document.querySelectorAll('.tab').forEach(function(b) {
+      if (b.textContent && b.textContent.indexOf('Em Desenvolv') >= 0) showTab('dev', b);
+    });
+  }
+  setTimeout(function() {
+    var conformChip = null;
+    document.querySelectorAll('#dev-content .chip').forEach(function(b) {
+      if (b.textContent && b.textContent.indexOf('CONFORM') >= 0) conformChip = b;
+    });
+    setDevTab('conform', conformChip);
+    // Scroll to filled field
+    if (field) field.scrollIntoView({behavior:'smooth', block:'center'});
+    // Highlight the field
+    if (field) {
+      field.style.background = '#fef3c7';
+      setTimeout(function(){ field.style.background = ''; }, 1500);
+    }
+  }, 150);
+
+  showToast('Adicionado em ' + (CAT_LABELS[cat]||cat) + ': ' + brl(val));
+}
+
+function clearConform() {
+  var fields = ['cf_conta','cf_ocs','cf_paciente','cf_guia','cf_motivo','cf_proc_outro',
+    'cf_diarias','cf_taxas','cf_honorarios','cf_honorarios_obs','cf_honor_outros','cf_honor_outros_obs',
+    'cf_medicamentos','cf_gases','cf_mat_desc','cf_exames_lab','cf_exames_img',
+    'cf_outros_exames','cf_opme','cf_pacotes','cf_outros','cf_total_cobrado',
+    'cf_val_auditado','cf_obs','cf_local','cf_data_assin','cf_auditor','cf_dt_ini','cf_dt_fim'];
+  fields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  if (typeof calcConformTotal === 'function') calcConformTotal();
+}
+
+function printConform() { window.print(); }
 
 </script>
 </body>
